@@ -10,10 +10,18 @@ def trouverContact(list_contact, nom=None, numero=None):
         contact = [contact for contact in list_contact if contact['numero']==numero][0]
     return(contact)
 
-def ajouterContact(list_contact, nom, numero):
-    pass
+def ajouterContact(list_contact:list, nom, numero):
+    contact={'nom':nom, 'numero':numero}
+    list_contact.append(contact)
 
 def supprimerContact(list_contact, nom=None, numero=None):
+    contact = None
+    if nom != None:
+        contact = [contact for contact in list_contact if contact['nom']==nom][0]
+    elif numero!=None:
+        contact = [contact for contact in list_contact if contact['numero']==numero][0]
+    
+def verifierContact(list_contact, nom=None, numero=None):
     pass
 
 def verifierNumero(numero:str):
@@ -21,6 +29,7 @@ def verifierNumero(numero:str):
         output = numero.replace(' ', '')
     else:
         output = False
+    return(output)
 
 
 def printContact(contact):
@@ -56,7 +65,9 @@ def menu():
                         contact = trouverContact(annuaire, nom=nom)
                         printContact(contact)
             case 2:
-                ajouterContact()
+                numero = verifierNumero(input("Numéro: "))
+                nom = input("Nom: ")
+                ajouterContact(annuaire, nom, numero)
             case 3:
                 supprimerContact()
             case 4:
@@ -66,6 +77,4 @@ def menu():
                 break
             case _:
                 print("Veuillez renter un choix valide")
-
-menu()
 
