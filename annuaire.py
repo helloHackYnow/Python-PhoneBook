@@ -28,8 +28,6 @@ def supprimerContact(list_contact, nom=None, numero=None):
     elif numero!=None:
         contact = [contact for contact in list_contact if contact['numero']==numero][0]
     
-def verifierContact(list_contact, nom=None, numero=None):
-    pass
 
 def verifierNumero(numero:str):
     if len(numero.replace(' ', ''))==10:
