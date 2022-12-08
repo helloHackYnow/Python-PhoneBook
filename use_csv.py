@@ -21,7 +21,3 @@ def write(path:str, annuaire_list:list):
         for row in annuaire_list:
             writer.writerow(row)
         csvfile.close()
-
-list_contact = read('annuaire.csv')
-contact = [contact for contact in list_contact if contact['nom']=='vimbert']
-print(contact)
