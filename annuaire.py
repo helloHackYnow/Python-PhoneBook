@@ -1,6 +1,6 @@
 import use_csv
-from tkinter import filedialog as fd
 import re
+from zipfile import ZipFile
 
 
 def searchContactsByName(name:str, list_contact):
@@ -13,7 +13,12 @@ def searchContactsByName(name:str, list_contact):
     return contacts
 
 def searchContactByNumero(numero, list_contact):
-    contacts = [contact for contact in list_contact if contact['numero']==numero][0]
+    name_patern = re.compile(numero.lower())
+    contacts = []
+    print(contacts)
+    for i in range(len(list_contact)):
+        if name_patern.search(list_contact[i]['numero'].lower()):
+            contacts.append(i)
     return contacts
 
 
@@ -21,13 +26,6 @@ def ajouterContact(list_contact:list, nom, numero):
     contact={'nom':nom, 'numero':numero}
     list_contact.append(contact)
 
-def supprimerContact(list_contact, nom=None, numero=None):
-    contact = None
-    if nom != None:
-        contact = [contact for contact in list_contact if contact['nom']==nom][0]
-    elif numero!=None:
-        contact = [contact for contact in list_contact if contact['numero']==numero][0]
-    
 
 def verifierNumero(numero:str):
     if len(numero.replace(' ', ''))==10:
@@ -46,4 +44,11 @@ def printContact(contact):
 
 def saveChanges(path, contact_list):
     use_csv.write(path, contact_list)
+
+def unZipAnnuaire(annuaire_path):
+    with ZipFile(annuaire_path, 'r') as zip_file:
+        zip_file.extractall(path="working_directorie/")
+
+def reZipAnnuaire():
+    pass
 

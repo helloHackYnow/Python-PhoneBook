@@ -1,3 +1,4 @@
+import zipfile
 import csv
 
 def read(path:str) -> list:
@@ -23,3 +24,5 @@ def write(path:str, annuaire_list:list):
         for contact in annuaire_list:
             writer.writerow(contact)
         csvfile.close()
+
+print(read('contact_list.csv'))
