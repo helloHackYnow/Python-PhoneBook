@@ -18,7 +18,9 @@ class App(customtkinter.CTk):
     MAX_CONTACT_PER_PAGE = 11 #Nombre de contact par page de la liste de contact
     NB_RESULT_WIDHT = 4 #Largeur de la grille de resultat
     NB_RESULT_HEIGHT = 3 #Hauteur de la grille de resultat
-    OPEN_NEW_ANNUAIRE_AT_LAUNCH = True
+    OPEN_NEW_ANNUAIRE_AT_LAUNCH = True 
+    TMP_DIR = "tmp" #Chemin d'accès du dossier 
+    DEFAULT_TEMPLATE_PATH = "default_templates/empty.annuaire"
     
     def __init__(self):
         super().__init__()
@@ -54,6 +56,10 @@ class App(customtkinter.CTk):
         if App.OPEN_NEW_ANNUAIRE_AT_LAUNCH:
             path = filedialog.askopenfilename(filetypes=[('Annuaire file', '*.annuaire')])
             self.unpackFile(path)
+        
+        else:
+            path = App.DEFAULT_TEMPLATE_PATH
+            self.unpackFile(path)
             
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
         
@@ -79,6 +85,7 @@ class App(customtkinter.CTk):
         #Create each tab one by one
         if nb_contact % App.MAX_CONTACT_PER_PAGE != 0:
             nb_pages += 1
+            
         for i in range(0, nb_pages):
             self.list_contact_tab.add(f"Page {i+1}")
             self.list_contact_tab.tab(f"Page {i+1}").grid_columnconfigure(0, weight=1)
@@ -165,7 +172,7 @@ class App(customtkinter.CTk):
             numero = self.contact_list[contact_index].get('numero')
             img = None
             if self.contact_list[contact_index].get('photo_name') != 'None':
-                photo_path = 'working_directorie/'+self.contact_list[contact_index].get('photo_name')
+                photo_path = f'{App.TMP_DIR}/'+self.contact_list[contact_index].get('photo_name')
                 img = customtkinter.CTkImage(Image.open(photo_path),
                                                 size=(200, 200))
                 
@@ -263,7 +270,7 @@ class App(customtkinter.CTk):
             self.contact_list[self.current_contact_index]['nom'] = new_name
             self.contact_list[self.current_contact_index]['numero'] = new_numero
 
-            annuaire.saveChanges("working_directorie/contact_list.csv", self.contact_list)
+            annuaire.saveChanges(f"{App.TMP_DIR}/contact_list.csv", self.contact_list)
             self.onModificationWindowClose()
 
     def searchButtonFunc(self):
@@ -300,7 +307,7 @@ class App(customtkinter.CTk):
     
     def addImage(self):
         image_path = filedialog.askopenfilename(title="Selectionez un image")
-        save_folder = "working_directorie"
+        save_folder = App.TMP_DIR
         # Open the image using PIL
         image = Image.open(image_path)
         
@@ -326,28 +333,28 @@ class App(customtkinter.CTk):
         output_filename = filedialog.asksaveasfilename(filetypes=[('Annuaire file', '*.annuaire')]).split(".")[0]
         
         #Delete possibly remaining .zip files
-        dir = os.listdir("working_directorie")
+        dir = os.listdir(App.TMP_DIR)
 
         for file in dir:
             if file.endswith(".zip"):
-                os.remove(os.path.join("working_directorie", file))
+                os.remove(os.path.join(App.TMP_DIR, file))
         
-        shutil.make_archive(output_filename, 'zip', "working_directorie")
+        shutil.make_archive(output_filename, 'zip', App.TMP_DIR)
         os.replace(f"{output_filename}.zip", f"{output_filename}.annuaire")
         
-        files = glob.glob('working_directorie/*')
+        files = glob.glob(f'{App.TMP_DIR}/*')
         for f in files:
             os.remove(f)
             
     def unpackFile(self, path):
-        new_path = shutil.copy(path, 'working_directorie')
+        new_path = shutil.copy(path, App.TMP_DIR)
         new_name = new_path.split(".")[0]+".zip"
         os.rename(new_path, new_name)
         try:
-            shutil.unpack_archive(new_name, 'working_directorie')
+            shutil.unpack_archive(new_name, App.TMP_DIR)
         except:
             pass
-        csv_path = 'working_directorie/contact_list.csv'
+        csv_path = f'{App.TMP_DIR}/contact_list.csv'
         self.contact_list = use_csv.read(csv_path)
         self.redrawInterface()
         
