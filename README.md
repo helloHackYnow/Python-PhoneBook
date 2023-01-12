@@ -2,7 +2,7 @@
 
 This is a project I made for school.  
 The interface is made with [customTkinter](https://github.com/TomSchimansky/CustomTkinter).
-There is still a lot of bug or unusable features, but I will improve the project if it's needed.
+There is still a lot of bugs or unusable features, but I will improve the project if it's needed.
 
 ## File format
 To save the phonebook, I created file format .annuaire ( annuaire = phonebook in french ).
