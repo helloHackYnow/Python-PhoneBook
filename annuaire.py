@@ -1,6 +1,5 @@
 import use_csv
 import re
-from zipfile import ZipFile
 
 
 def searchContactsByName(name:str, list_contact):
@@ -45,10 +44,4 @@ def printContact(contact):
 def saveChanges(path, contact_list):
     use_csv.write(path, contact_list)
 
-def unZipAnnuaire(annuaire_path):
-    with ZipFile(annuaire_path, 'r') as zip_file:
-        zip_file.extractall(path="working_directorie/")
-
-def reZipAnnuaire():
-    pass
 
