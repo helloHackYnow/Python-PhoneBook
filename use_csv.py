@@ -1,8 +1,9 @@
 import csv
 
-def read(path:str) -> list:
+def read(path:str) -> list[dict]:
     """
-    Charge un fichier csv et le met dans une liste de dictionnaires (de clés identiques)
+    Charge un fichier csv et le met dans une liste de dictionnaires (de clés identiques)\n
+    [{nom:"nom", prenom:"prenom", numero:"numero"}]
     """
     with open(path, newline='') as csvfile:
         annuaire_dictReader = csv.DictReader(csvfile)

@@ -1,4 +1,5 @@
 from tkinter import filedialog
+from tkinter import messagebox
 import customtkinter
 import annuaire
 import use_csv
@@ -10,6 +11,8 @@ import glob
 
 customtkinter.set_appearance_mode("System")  # Modes: "System" (standard), "Dark", "Light"
 customtkinter.set_default_color_theme("blue")  # Themes: "blue" (standard), "green", "dark-blue"
+
+customtkinter.deactivate_automatic_dpi_awareness()
 
 class App(customtkinter.CTk):
     WIDTH = 780
@@ -23,37 +26,52 @@ class App(customtkinter.CTk):
     ICONS_DIR = "Icons"
     SAVE_AS_AT_EXIT = False
     
+    # Initialisation de la classe App
     def __init__(self):
         super().__init__()
 
+        # créer une liste vide pour stocker les contacts 
+        #===============================================
         self.contact_list = []
         
+        # paramétrage de la fenêtre
+        #===============================
         self.title("Annuaire")
         self.geometry(f"{App.WIDTH}x{App.HEIGHT}")
 
+        # utiliser la gestion de géométrie de grille de Tkinter pour organiser les frames
+        #================================================================================
         self.grid_columnconfigure((1, 2), weight=1)
         self.grid_columnconfigure(0, weight=0)
         self.grid_rowconfigure(0, weight=1)
 
+        # créer un frame de droite pour organiser les widgets
+        #====================================================
         self.right_frame = customtkinter.CTkFrame(master=self)
         self.right_frame.grid(column=1,columnspan=2, row=0, sticky='nswe', padx=20, pady=20, rowspan=2)
 
         self.right_frame.grid_columnconfigure(0, weight=1)
         self.right_frame.grid_rowconfigure((0, 1), weight=1)
 
+        # créer un frame pour l'interface de recherche
+        #=============================================
         self.search_interface_frame = customtkinter.CTkFrame(master=self.right_frame)
         self.search_interface_frame.grid(row=0, column=0, padx=20, pady=(20, 10), sticky="nsew")
-
         self.search_interface_frame.grid_columnconfigure(1, weight=1)
 
+        # créer un frame pour l'interface des résultats
+        #==============================================
         self.result_interface_frame = customtkinter.CTkFrame(master=self.right_frame)
         self.result_interface_frame.grid(row=1, column=0, padx=20, pady=(10, 20), sticky='nsew')
-
         self.result_interface_frame.grid_columnconfigure(0, weight=1)
         self.result_interface_frame.grid_rowconfigure(0, weight=1)
         
+        # variable pour savoir si la fenêtre de modification est ouverte
         self.is_modification_window_open = False
 
+        # si la variable App.OPEN_NEW_ANNUAIRE_AT_LAUNCH est vraie, 
+        # affiche un boîte de dialogue pour choisir un fichier
+        # sinon, utilise le fichier par défaut
         if App.OPEN_NEW_ANNUAIRE_AT_LAUNCH:
             path = filedialog.askopenfilename(filetypes=[('Annuaire file', '*.annuaire')])
             self.unpackFile(path)
@@ -70,7 +88,7 @@ class App(customtkinter.CTk):
 
     def on_closing(self):
         """
-        Handles the action when the user closes the application. Saves the file and cleans temp files if needed, before exiting.
+        Gère l'action lorsque l'utilisateur ferme l'application. Enregistre le fichier et nettoie les fichiers temporaires si nécessaire, avant de quitter.
         """
         if App.SAVE_AS_AT_EXIT:
             self.saveAsFile()
@@ -86,22 +104,26 @@ class App(customtkinter.CTk):
             quit()
             
     def askForSave(self):
-        self.ask_window = customtkinter.CTkToplevel()
-        self.ask_window.title("Wait !")
-        self.accept_button = customtkinter.CTkButton(master=self.ask_window, text="Yes", command=lambda:[self.saveAsFile(), self.cleanTmp(), self.destroy(), quit()])
-        self.accept_button.grid(column=0)
-        self.no_button = customtkinter.CTkButton(master=self.ask_window, text="No", command=lambda:[self.cleanTmp(), self.destroy(), quit()])
-        self.no_button.grid(column=1)
-        self.cancel_button = customtkinter.CTkButton(master=self.ask_window, text="Cancel", command=lambda:self.ask_window.destroy())
-        self.cancel_button.grid(column=2)
-        
+        result = messagebox.askyesnocancel("Sauvegarder les modifications", "Voulez-vous sauvegarder les modifications ?")
+        if result == True:
+            self.saveAsFile()
+            self.cleanTmp()
+            self.destroy()
+            quit()
+        elif result == False:
+            self.cleanTmp()
+            self.destroy()
+            quit()       
         
     
     def create_contact_tab(self):
         """
-        Create the tab view on the left that serve to display a list of the contacts
+        Crée l'onglet de contacts, en utilisant une vue en onglets pour diviser les contacts en pages 
+        et en affichant chaque contact sous forme de bouton, 
+        avec une fonction de modification de contact associée.
         """
-        #Contact tab view
+        #Contacts en onglet
+        #==================
         self.list_contact_tab = customtkinter.CTkTabview(master=self, width=10)
         self.list_contact_tab.grid(row=0, column=0, padx=(20, 0), pady=(20, 20), sticky="nsew")
 
@@ -110,7 +132,8 @@ class App(customtkinter.CTk):
         nb_contact = len(self.contact_list)
         nb_pages = nb_contact // App.MAX_CONTACT_PER_PAGE
 
-        #Create each tab one by one
+        #Création des onglets
+        #====================
         if nb_contact % App.MAX_CONTACT_PER_PAGE != 0:
             nb_pages += 1
             
@@ -118,7 +141,8 @@ class App(customtkinter.CTk):
             self.list_contact_tab.add(f"Page {i+1}")
             self.list_contact_tab.tab(f"Page {i+1}").grid_columnconfigure(0, weight=1)
 
-        #Create each button one by one
+        #Création des boutons
+        #====================
         for contact_index in range(nb_contact):
             page_index = (contact_index // App.MAX_CONTACT_PER_PAGE)+1
             contact_name = self.contact_list[contact_index].get('nom')
@@ -129,14 +153,16 @@ class App(customtkinter.CTk):
             button.grid(row=contact_index, columnspan=2, pady=5, padx=5, sticky="s")
             self.list_button_contact.append(button)
 
-        #Create the 'add' button
+        #Création du bouton 'add_contact'
+        #================================
         self.add_button = customtkinter.CTkButton(master=self, text="Add", command=self.addContactButton)
         self.add_button.grid(row=1, column=0, sticky="eswn", padx=(25, 0), pady=(0, 20))
         self.update()
 
     def createSearchInterface(self):
         """
-        Create the search interface for the application. This includes a label, two entry fields for searching by name or number, and a button to initiate the search.
+        Crée l'interface de recherche, en utilisant les entrées pour rechercher par nom et numéro, 
+        et en incluant un bouton pour lancer la recherche.
         """
         self.searchLabel = customtkinter.CTkLabel(master=self.search_interface_frame, text="Search", font=customtkinter.CTkFont(size=45, weight="bold"))
         self.searchLabel.grid(row=0, column=0, padx=30, pady=20)
@@ -152,7 +178,9 @@ class App(customtkinter.CTk):
 
     def createResultInterface(self):
         """
-        Create the tab wich display the result of search
+        Crée l'onglet affichant les résultats de la recherche, 
+        en utilisant les paramètres spécifiés pour diviser les résultats en pages 
+        et afficher les informations de chaque contact sous forme de bouton.
         """
 
         self.result_tab = customtkinter.CTkTabview(master=self.result_interface_frame, height=170)
@@ -164,6 +192,8 @@ class App(customtkinter.CTk):
 
         self.list_buttons_result = []
 
+        #Calcul du nombre d'onglet
+        #=========================
         if nb_contact % nb_contact_per_pages != 0:
             nb_pages += 1
         for i in range(0, nb_pages):
@@ -174,6 +204,8 @@ class App(customtkinter.CTk):
                 self.result_tab.tab(f"{i+1}").grid_columnconfigure(y, weight=1)
         index_in_tab_result = 0
 
+        #Création en placement des boutons dans
+        #======================================
         for contact_result_index in self.list_contacts_result:
             print(contact_result_index)
             tab_index = index_in_tab_result // nb_contact_per_pages + 1
@@ -190,7 +222,7 @@ class App(customtkinter.CTk):
     
     def create_contact_modification_window(self, contact_index):
         """
-        Create a pop-up window wich can modifie or delete a contact
+        Créer une fenêtre pop-up qui permet de modifier ou supprimer un contact
         """
         if not self.is_modification_window_open:
             self.is_modification_window_open = True
@@ -200,7 +232,8 @@ class App(customtkinter.CTk):
             numero = self.contact_list[contact_index].get('numero')
             
                 
-
+            #Initialisation de la fenêtre
+            #============================
             self.contact_modification_window = customtkinter.CTkToplevel()
             self.contact_modification_window.title(f"Modifier le contact {name}")
             self.contact_modification_window.geometry("730x230")
@@ -223,6 +256,8 @@ class App(customtkinter.CTk):
             self.del_contact_button = customtkinter.CTkButton(master=self.left_frame_subWindow, text="Supprimer", command=self.deleteContact)
             self.del_contact_button.grid(sticky="ews", padx=10, pady=10)
             
+            #Création d'un frame et organisation de ce dernier
+            #=================================================
             self.right_frame_subWindow = customtkinter.CTkFrame(master=self.contact_modification_window)
             self.right_frame_subWindow.grid(row=0, column=1, rowspan=2, padx=15, pady=15, sticky="nswe")
             self.right_frame_subWindow.grid_columnconfigure((0, 1), weight=1)
@@ -232,6 +267,8 @@ class App(customtkinter.CTk):
             self.label_modification = customtkinter.CTkLabel(master=self.right_frame_subWindow, text="Modification", font=customtkinter.CTkFont(size=20, weight="bold"))
             self.label_modification.grid(row=0, column=0, sticky="ws", padx=15, pady=10)
 
+            #Création des entré pour le nom et le numéro
+            #===========================================
             self.name_current_contact = customtkinter.StringVar()
             self.name_current_contact.set(name)
             self.name_entry_modification = customtkinter.CTkEntry(master=self.right_frame_subWindow, textvariable=self.name_current_contact)
@@ -242,6 +279,9 @@ class App(customtkinter.CTk):
             self.name_entry_modification = customtkinter.CTkEntry(master=self.right_frame_subWindow, textvariable=self.numero_current_contact)
             self.name_entry_modification.grid(row=2, column=0, padx=15, pady=15, sticky='wn')
             
+            
+            #Création des boutons pour copier les infos
+            #==========================================
             copy_icon = customtkinter.CTkImage(Image.open(os.path.join(f"{App.ICONS_DIR}/copy_blue.png")), size=(20, 20))
             self.copy_name_button = customtkinter.CTkButton(master=self.right_frame_subWindow, 
                                                             image=copy_icon, text="", width=30, 
@@ -255,13 +295,17 @@ class App(customtkinter.CTk):
                                                               command=lambda:pyperclip.copy(self.numero_current_contact.get()))
             self.copy_numero_button.grid(row=2, column=1, padx=15, pady=15, sticky='ws')
             
+            
+            #Création du boutons pour sauvegarder
+            #====================================
             self.accept_button_save_changes = customtkinter.CTkButton(self.right_frame_subWindow, text="Save",width=60, command=lambda:self.save_contact_modification())
             self.accept_button_save_changes.grid(row=2, column=2, padx=15, pady=15, sticky='es')
 
             self.photo_frame = customtkinter.CTkFrame(master=self.contact_modification_window, width=200)
             self.photo_frame.grid(row=0, column=2, padx=15, pady=15)
             
-            #Load the pictures. If no picture, create an "add pictures" button
+            #Charge la photo, si il n'y en a pas, creer un bouton 'add_photo'
+            #================================================================
             img = None
             if self.contact_list[contact_index].get('photo_name') != 'None':
                 photo_path = f'{App.TMP_DIR}/'+self.contact_list[contact_index].get('photo_name')
@@ -279,7 +323,7 @@ class App(customtkinter.CTk):
 
     def onModificationWindowClose(self):
         """
-        This focntion is called when the modification window is closed
+        Fonction appellé quand la fenêtre de modification est fermée
         """
         self.contact_modification_window.destroy()
         self.redrawInterface()
@@ -287,7 +331,7 @@ class App(customtkinter.CTk):
 
     def verifieChanges(self):
         """
-        Verifie if the phone number enter is correct or not
+        Vérifie si le numero est correct
         """
         new_numero = self.numero_current_contact.get()
         new_numero = annuaire.verifierNumero(new_numero)
@@ -300,16 +344,15 @@ class App(customtkinter.CTk):
             
     def redrawInterface(self):
         """
-        Reset the result tab and redraw the inteface
+        Réinitialise l'interface
         """
         self.result_tab=None
         self.create_contact_tab()
         self.createSearchInterface()
 
     def save_contact_modification(self):
-        """
-        Saves the modifications made to the current contact in the contact list.
-        Verifies if changes have been made before updating the contact and saving the new list to a csv file.
+        """ 
+        Enregistre les modifications et ferme la fenêtre de modification
         """
         if self.verifieChanges():
             new_name = self.name_current_contact.get()
@@ -324,8 +367,8 @@ class App(customtkinter.CTk):
             self.onModificationWindowClose()
 
     def searchButtonFunc(self):
-        """
-        This fonction is called when 
+        """ 
+        Recherche les contacts par nom ou numéro et affiche les résultats 
         """
         name = self.search_by_name_entry.get()
         numero = self.search_by_numero_entry.get()
@@ -341,11 +384,11 @@ class App(customtkinter.CTk):
 
     def deleteContact(self):
         """
-        Remove the currently selected contact from the list of contacts and save the changes to the CSV file.
+        Supprime le contact selectionné de la liste et sauvegarde les changements.
         """
         os.remove(f"{App.TMP_DIR}/{self.contact_list[self.current_contact_index]['photo_name']}")
         self.contact_list.pop(self.current_contact_index)
-        annuaire.saveChanges("working_directorie/contact_list.csv", self.contact_list)
+        annuaire.saveChanges(f"{App.TMP_DIR}/contact_list.csv", self.contact_list)
         
         self.is_modifie = True
         
@@ -353,7 +396,7 @@ class App(customtkinter.CTk):
     
     def addContactButton(self):
         """
-        Add a new default contact to the list of contacts and open the contact modification window for the new contact.
+        Créer un contact vide et ouvre sa fenêtre de modification
         """
         new_contact= {"nom":"default", "numero":"None", "photo_name":"None"}
         self.contact_list.append(new_contact)
@@ -364,22 +407,18 @@ class App(customtkinter.CTk):
     
     def addImage(self):
         """
-        Allows the user to select an image to the contact and saves it. The image will be resized and cropped to 200x200 pixels.
-        The path of the image is then added to the current contact in the contact list, and the contact modification window is reopened.
+        Permet à l'utilisateur d'ajouter une image au contact
         """
         image_path = filedialog.askopenfilename(title="Selectionez un image")
         save_folder = App.TMP_DIR
-        # Open the image using PIL
         image = Image.open(image_path)
         
-        # Crop the image to 200x200 pixels
+        #Changer la taille de l'image
+        #============================
         image.thumbnail(size=(200, 200))
         
-        # Create the save folder if it does not exist
-        if not os.path.exists(save_folder):
-            os.makedirs(save_folder)
-        
-        # Get the file name and extension of the image
+        #Nom du fichier et extension
+        #===========================
         file_name, file_extension = os.path.splitext(os.path.basename(image_path))
         save_path = os.path.join(save_folder, file_name + file_extension)
         image.save(save_path)
@@ -392,7 +431,7 @@ class App(customtkinter.CTk):
     
     def cleanTmp(self):
         """
-        Deletes all files in the temporary folder specified by the global variable App.TMP_DIR.
+        Supprime tous les fichiers du dossier temporaire spécifié par la variable globale App.TMP_DIR.
         """
         files = glob.glob(f'{App.TMP_DIR}/*')
         for f in files:
@@ -401,12 +440,12 @@ class App(customtkinter.CTk):
         
     def saveAsFile(self):
         """
-        Allows the user to save the current data to a new file in the format of '.annuaire' file. The data is saved in a zip archive before being renamed to the desired format.
-        The function also clean the temporary folder before saving the new file.
+        Permet à l'utilisateur de sauvegarder les données actuelles dans un nouveau fichier au format '.annuaire'. Les données sont enregistrées dans une archive zip avant d'être renommées au format souhaité.
+        La fonction nettoie également le dossier temporaire avant de sauvegarder le nouveau fichier.
         """
         output_filename = filedialog.asksaveasfilename(filetypes=[('Annuaire file', '*.annuaire')]).split(".")[0]
         
-        #Delete possibly remaining .zip files
+        #Suprime les fichiers .zip restants
         dir = os.listdir(App.TMP_DIR)
 
         for file in dir:
@@ -420,9 +459,8 @@ class App(customtkinter.CTk):
             
     def unpackFile(self, path):
         """
-        Unpacks the file located at 'path' into the temporary folder specified by the global variable App.TMP_DIR.
-        The file will be copied, renamed to a '.zip' file and then unpacked using the shutil library.
-        The contact list will then be read from the unpacked 'contact_list.csv' file and the interface will be redrawn.
+        Décompresse le fichier situé dans 'path' dans le dossier temporaire spécifié par la variable globale App.TMP_DIR.\n
+        Charge les contacts
         """
         new_path = shutil.copy(path, App.TMP_DIR)
         new_name = new_path.split(".")[0]+".zip"
